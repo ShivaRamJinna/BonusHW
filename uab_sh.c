@@ -1,12 +1,18 @@
+//gcc -o uab_sh uab_sh.c Myfunctions.c History.c   
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
 
+#include"MyFunctions.h"//All the built in commands
+#include"History.h"//Functions related to logs
+
 
 #define cmd_len 256
 #define no_of_args 16
 #define fSize 16
+#define pathLen 101
+
 
 char InputString[cmd_len];//Input String
 char *arguments[no_of_args];
@@ -15,6 +21,8 @@ pid_t pid;
 
 void ProcessInput(char *str, char** PostParsing)  
 {
+
+	memset(arguments, 0, no_of_args);
 	//Takes Input from "uab_sh >"and assigns it to Char Args
 	printf("uab_sh> ");
 	char *temp;
@@ -30,74 +38,17 @@ void ProcessInput(char *str, char** PostParsing)
         currentLength++;
         temp = strtok (NULL, " ");
     }
-}//Challanges : Postparshing[1] is not being cleared after every iteration
+}
+//Challanges : Postparshing[1] is not being cleared after every iteration
 //Fibonacci not working 
-
-
-
-void hello()
-{
-	printf("Hello World!\n");
-}
-
-void Help()
-{
-	printf("***************************\n");
-	printf("List of Commands Supported:\n"
-		   "***************************\n"
-		   "list – list all the files in the current directory.\n"
-		   "cd <directory> – change the current directory to the <directory>.\n"
-		   "help – display the internal commands and a short description on how to use them\n"
-		   "quit – quit the shell program.\n"
-		   "history - display all the previous command entered into the shell program.\n");
-	printf("***************************\n");
-}
-
-void fibonacci()
-{
-	//Implement if argv == 1 -> Fibonacci no args
-	//Else if argv == 2 -> Fibonacci with args 
-	int n, i;
-	n = 0;
-	int n1 = 0, n2 = 1, next = n1+n2;
-	printf("How many elements you want to display:\t");
-	scanf("%d", &n);
-	if(n<0)
-	{
-		printf("Invalid input\n");
-	}
-	else
-	{
-		printf("The first %d values: %d, %d, ",n , n1, n2);
-		for (i = 3; i <= n; i++)
-		{
-		    printf("%d, ", next);
-		    n1 = n2;
-		    n2 = next;
-		    next = n1 + n2;
-  		}
-  		printf("\n");
-	}
-	//return;
-
-}
-
-void fibonacci_Args(int n){    
-    static int n1=0,n2=1,next; 
-      
-    if(n>0){    
-         next = n1 + n2;    
-         n1 = n2;    
-         n2 = next;    
-         printf("%d, ",next);    
-         fibonacci_Args(n-1);    
-    }    
-}  
-
-
 int Built_inCommands(char** PostParsing)
 {
-	if(strcmp("quit", PostParsing[0]) == 0)
+	if(strcmp("", PostParsing[0]) == 0)
+	{
+		//continue;
+		return 0;
+	}
+	else if(strcmp("quit", PostParsing[0]) == 0)
 	{
 		exit(0);
 	}
@@ -111,30 +62,41 @@ int Built_inCommands(char** PostParsing)
 		Help();
 		return 0;
 	}
-	else if(strcmp("cd", PostParsing[0]) == 0)
+	else if(strcmp("list", PostParsing[0]) == 0)
 	{
-		chdir(PostParsing[1]);
+		list();
 		return 0;
 	}
-
+	else if(strcmp("cd", PostParsing[0]) == 0)
+	{
+		if(PostParsing[1] > 0)
+		{
+			chdir(PostParsing[1]);
+		}
+		else
+		{
+			chdir("..");
+		}
+		return 0;
+	}
 	//PENDING
 	else if(strcmp("fibonacci", PostParsing[0]) == 0)
 	{
 		if(PostParsing[1] > 0)
 		{
-			int d1=0, d2=1;
-			//printf("inside Args");
 			int key = atoi(PostParsing[1]);
-			printf("%d ,%d, ", d1, d2);
-			fibonacci_Args(key);
-			printf("\n");
+			fibonacci(key);
 		}
 		else
 		{
-			fibonacci();
+			printf("How many elements you want to display: ");
+			int n;
+			scanf("%d", &n);
+			fibonacci(n);
 		}
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -159,47 +121,27 @@ void Fork_Exec(char** PostParsing)
 		return;
 	}
 }
-
-void logHistory(char* str, FILE* fp, char* fileName)
-{
-	fp = fopen(fileName, "a");
-    if (fp == NULL)
-    {
-        printf("\nUnable to open file.\n");
-    }
-    fputs(str, fp);
-    fputs("\n",fp);
-    fclose(fp);
-}
-void ViewLog(FILE* fp,char* fileName)
-{
-	char ch;
-	fp = fopen(fileName, "r");
-	do {
-        ch = fgetc(fp);
-        printf("%c", ch);
-    } while (ch != EOF);
-
-}
 int main(int argc, char const *argv[])
-{	
+{
 	char logFile[] = "uab_sh.log";
 	remove(logFile);
-	FILE* filePtr;
-	//filePtr = fopen(logFile, "a");
+	char path[pathLen];
+	getcwd(path, pathLen);//getting Current directry
+	strcat(path, "/");
+	strcat(path, logFile);
 
+	FILE* filePtr;
 	while(1)
 	{
-		memset(arguments, 0, no_of_args);
-		ProcessInput(InputString, arguments);
-		logHistory(InputString, filePtr, logFile);
+		ProcessInput(InputString, arguments);//Start Terminal and Parse input
+		logHistory(arguments, filePtr, path);//Log all the commands
 		int is_builtInCmd = 0;
-		is_builtInCmd = Built_inCommands(arguments);
+		is_builtInCmd = Built_inCommands(arguments);//Executing built in commands
 		if(strcmp("history", arguments[0]) == 0)
 		{
 			ViewLog(filePtr, logFile);
 		}
-		else if(is_builtInCmd == 1)
+		if(is_builtInCmd == 1)//If Built_inCommands returns 1, Execute System Commands
 		{
 			//printf("Hello From Fork\n");
 			Fork_Exec(arguments);

@@ -1,3 +1,6 @@
+#include<stdio.h>
+#include<dirent.h>
+
 void hello()
 {
 	printf("Hello World!\n");
@@ -15,16 +18,11 @@ void Help()
 		   "history - display all the previous command entered into the shell program.\n");
 	printf("***************************\n");
 }
-
-void fibonacci()
+void fibonacci(int n)
 {
-	//Implement if argv == 1 -> Fibonacci no args
-	//Else if argv == 2 -> Fibonacci with args 
-	int n, i;
-	n = 0;
+	int i;
 	int n1 = 0, n2 = 1, next = n1+n2;
-	printf("How many elements you want to display:\t");
-	scanf("%d", &n);
+	//fgets (*n, sizeof n, stdin);
 	if(n<0)
 	{
 		printf("Invalid input\n");
@@ -32,7 +30,7 @@ void fibonacci()
 	else
 	{
 		printf("The first %d values: %d, %d, ",n , n1, n2);
-		for (i = 3; i <= n; i++)
+		for (i = 2; i < n; i++)
 		{
 		    printf("%d, ", next);
 		    n1 = n2;
@@ -42,17 +40,23 @@ void fibonacci()
   		printf("\n");
 	}
 	//return;
-
 }
 
-void fibonacci_Args(int n)
-{    
-    static int n1=0,n2=1,next;   
-    if(n>0){    
-         next = n1 + n2;    
-         n1 = n2;    
-         n2 = next;    
-         printf("%d, ",next);    
-         fibonacci_Args(n-1);    
-    }    
+void list()//Refernce from HomeWork-2
+{
+	struct dirent *dirent;
+	DIR *rootDir = opendir(".");
+	if(rootDir == NULL)
+	{
+		printf("Unable to open Directory");
+		return;
+	}
+	while((dirent = readdir(rootDir)) != NULL)
+	{
+		printf("%s\n", dirent->d_name);
+	}
+	closedir(rootDir);
+	return;
+
+
 }
